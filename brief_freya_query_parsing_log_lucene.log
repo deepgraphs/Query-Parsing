@@ -1,0 +1,70 @@
+~Question q = mapper.processQuestionLucene("List cities in california.", false, null, true);
+~stanfordExecutor.findPocs 
+#finds POCs as stanfordParser.parseQuestion(text);
+#first tokenizes as [List, cities, in, california, .]
+#Creates syntactic tree of the tokenised sentence, and parses dependencies with stanford libraries
+#Collection tdl = gs.typedDependenciesCollapsed();
+#[root(ROOT-0, List-1), dobj(List-1, cities-2), prep_in(List-1, california-4)]
+#Find so called preterminal POCs only depending on the syntactic tagger and the part of speech they represent(adjectives nouns and so on)
+#List<Tree> trees = treeUtils.findPocs(tree);
+#[(NP (NNS cities)), (NP (NN california))]
+#in case POC is a noun phrase find its head and modifiers using the syntactic tree
+# head=cities  modfs=[]
+#Create annotations for head and modfs
+#remove adjs from pocs... none to remove in our case
+#[POC: Annotation: StartOffset:1 End offset:2 String:cities Syntax tree:[(NP (NNS cities))], POC: Annotation: StartOffset:3 End offset:4 String:california Syntax tree:[(NP (NN california))]]
+#[POC: Annotation: StartOffset:1 End offset:2 String:cities Syntax tree:[(NP (NNS cities))], POC: Annotation: StartOffset:3 End offset:4 String:california Syntax tree:[(NP (NN california))]]
+#find question type using regex and predetermined possible types
+#question = stanfordExecutor.getStanfordParser().findQuestionType(question);
+#since the question starts with "list" the type is determined as <unknown object>
+#lookup annotated POCs(possible ontology candidate) with lucene 
+#stem according to its syntax and plural or not
+#poc is given a weight using a precompiled piece of code i have yet to understand, it is however used below for the answer scorer.
+#the poc is searched within a lucene index org.freya.lucene.index.dir=file:src/main/resources/index  org.freya.lucene.index.dir.search=classpath:index
+#[ Annotation: StartOffset:1 End offset:3 String:cities in Syntax tree:[(NNS cities)] Features:{string=City, score=6.8277683, type=class, URI=http://www.mooney.net/geo#City},  Annotation: StartOffset:1 End offset:3 String:cities in Syntax tree:[(NNS cities)] Features:{string=is City Of, score=6.8277683, type=property, URI=http://www.mooney.net/geo#isCityOf},  Annotation: StartOffset:1 End offset:3 String:cities in Syntax tree:[(NNS cities)] Features:{string=city Population, score=4.267355, type=property, URI=http://www.mooney.net/geo#cityPopulation},  Annotation: StartOffset:1 End offset:3 String:cities in Syntax tree:[(NNS cities)] Features:{string=has City, score=4.267355, type=property, URI=http://www.mooney.net/geo#hasCity},  Annotation: StartOffset:3 End offset:4 String:california Syntax tree:[(NN california)] Features:{string=california, score=7.744059, classURIList=[http://www.mooney.net/geo#State], type=instance, classURI=http://www.mooney.net/geo#State, URI=http://www.mooney.net/geo#california}]
+#disambiguate and remove extra pocs //just declared not quite implemented
+#Consolidate POCs into semantic consepts 
+#ocCreator.getSemanticConcepts(new HashSet(lookupsList), question);
+#
+[[Ontology Elements:
+PropertyElement Is it the main subject? false
+Property URI: http://www.mooney.net/geo#cityPopulation Annotation: StartOffset:1 End offset:3 String:cities in Syntax tree:[(NNS cities)] Features:{string=city Population, score=4.267355, type=property, URI=http://www.mooney.net/geo#cityPopulation}
+Results:null
+Range:http://www.w3.org/2001/XMLSchema#float
+IsDatatypeproperty?:true Verified:false
+ Function:null
+Is ontology element already added:false
+, Ontology Elements:
+PropertyElement Is it the main subject? false
+Property URI: http://www.mooney.net/geo#hasCity Annotation: StartOffset:1 End offset:3 String:cities in Syntax tree:[(NNS cities)] Features:{string=has City, score=4.267355, type=property, URI=http://www.mooney.net/geo#hasCity}
+Results:null
+Range:http://www.mooney.net/geo#City
+IsDatatypeproperty?:false Verified:false
+ Function:null
+Is ontology element already added:false
+, Ontology Elements:
+ClassElement Is it the main subject? false Annotation: StartOffset:1 End offset:3 String:cities in Syntax tree:[(NNS cities)] Features:{string=City, score=6.8277683, type=class, URI=http://www.mooney.net/geo#City}
+Data/URI: http://www.mooney.net/geo#City Variable: null
+Results:null Verified:false
+ Function:null
+Is ontology element already added:false
+, Ontology Elements:
+PropertyElement Is it the main subject? false
+Property URI: http://www.mooney.net/geo#isCityOf Annotation: StartOffset:1 End offset:3 String:cities in Syntax tree:[(NNS cities)] Features:{string=is City Of, score=6.8277683, type=property, URI=http://www.mooney.net/geo#isCityOf}
+Results:null
+Range:http://www.mooney.net/geo#State
+IsDatatypeproperty?:false Verified:false
+ Function:null
+Is ontology element already added:false
+], [Ontology Elements:
+InstanceListElement Is it the main subject? false Annotation: StartOffset:3 End offset:4 String:california Syntax tree:[(NN california)] Features:{string=california, score=7.744059, classURIList=[http://www.mooney.net/geo#State], type=instance, classURI=http://www.mooney.net/geo#State, URI=http://www.mooney.net/geo#california} Instance URI: [http://www.mooney.net/geo#california] Class URI: http://www.mooney.net/geo#State 
+ Variable:null
+Results:nullClass URIs[http://www.mooney.net/geo#State] Verified:false
+ Function:null
+Is ontology element already added:false
+]]
+#find question focus poc and focus_priority using the constants on the configuration file ... rigid string matching logic used. stanfordExecutor.getStanfordParser().findFocus(question);
+#in our case POC: Annotation: StartOffset:1 End offset:2 String:cities Syntax tree:[(NP (NNS cities))] priority: 0
+#if priority of main subject (focus) is max(question of type how long, where, when, who), then extra overlapping ontological consepts are removed.
+#lucene checks whether poc overlaps with oc if yes, sConcept.verified=true and poc is removed from the list
+#question object is ready
