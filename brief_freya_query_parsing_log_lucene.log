@@ -1,6 +1,6 @@
 ~Question q = mapper.processQuestionLucene("List cities in california.", false, null, true);
 ~stanfordExecutor.findPocs 
-#finds POCs as stanfordParser.parseQuestion(text);
+#finds POCs (possible ontology consept) as stanfordParser.parseQuestion(text);
 #first tokenizes as [List, cities, in, california, .]
 #Creates syntactic tree of the tokenised sentence, and parses dependencies with stanford libraries
 #Collection tdl = gs.typedDependenciesCollapsed();
